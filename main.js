@@ -1,10 +1,10 @@
 "use strict";
-// Карты и колода
+// Cards and ranks
 const card = {
   suit: ["Spade", "Heart", "Diamond", "Club"],
   rank: ["6", "7", "8", "9", "10", "J", "Q", "K", "A"],
 };
-// Класс карты
+// Class representing a single card
 class Card {
   constructor(suit, rank, value) {
     this.suit = suit;
@@ -15,7 +15,7 @@ class Card {
     return this.suit === currentTrumpSuit;
   }
 }
-// Создание колоды и раздача карт
+// Creates a deck of cards and provides methods to shuffle and deal hands
 class Deck {
   constructor(cardRef) {
     this.cards = [];
@@ -46,7 +46,7 @@ class Deck {
     return hand;
   }
 }
-// Основной класс игры
+// Main game class that manages the game state, player and bot hands, and game logic
 class Game {
   constructor(cardRef) {
     this.trumpSuit = null;
@@ -250,7 +250,7 @@ class Game {
     return false;
   }
 }
-// Логика бота
+// Logic for bot's attack and defense strategies
 class Bot {
   botAttack() {
     if (this.botHand.length === 0) return null;
