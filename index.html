@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>durak</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="game-container">
+      <div id="game-status-panel">
+        <div id="deck-zone">Deck: <span id="deck-count-display">0</span></div>
+        <div id="trump-zone">Trump: <span id="trump-suit-display">—</span></div>
+      </div>
+      <div id="bot-hand" class="hand-container"></div>
+      <div id="game-message" class="message-hidden"></div>
+      <div id="table-zone"></div>
+      <div id="player-hand" class="hand-container"></div>
+      <div id="controls">
+        <button id="action-btn">Beat / Take</button>
+      </div>
+    </div>
+    <script src="main.js"></script>
+    <script src="ui.js"></script>
+  </body>
+</html>

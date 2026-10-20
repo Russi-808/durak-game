@@ -68,7 +68,6 @@ class Game {
     this.playerHand = this.deckManager.dealHand(6);
     this.botHand = this.deckManager.dealHand(6);
     this.firstPlayer();
-    alert("Start the game:", this);
   }
   firstPlayer() {
     let playerMinRankValue = Infinity;
@@ -99,11 +98,6 @@ class Game {
       this.attacker = "bot";
       this.defender = "player";
     }
-    if (this.attacker === "player") {
-      alert("You start the game!");
-    } else {
-      alert("Bot starts the game!");
-    }
   }
   attack(cardIndex) {
     const attackerHand =
@@ -130,7 +124,6 @@ class Game {
     }
     attackerHand.splice(cardIndex, 1);
     this.table.push({ attackCard: chosenCard, defendCard: null });
-    alert(`Card played: ${chosenCard.suit} ${chosenCard.rank}`);
   }
   defense(defenseCardIndex, tablePairIndex) {
     const defenderHand =
@@ -138,7 +131,6 @@ class Game {
     const chosenDefenseCard = defenderHand[defenseCardIndex];
     const targetPair = this.table[tablePairIndex];
     if (!chosenDefenseCard || !targetPair) {
-      alert("invalid card! Choose another one.");
       return;
     }
     if (targetPair.defendCard !== null) {
@@ -158,9 +150,6 @@ class Game {
     if (isSameSuitAndHigher || isTrumpOverNormal || isTrumpOverTrump) {
       defenderHand.splice(defenseCardIndex, 1);
       targetPair.defendCard = chosenDefenseCard;
-      alert("Card successfully defended!");
-    } else {
-      alert("This card cannot be used to defend the card on the table!");
     }
   }
   beatCard() {
@@ -221,7 +210,6 @@ class Game {
     const defenderHand =
       this.defender === "player" ? this.playerHand : this.botHand;
     if (tableCardCount >= defenderHand.length || tableCardCount >= 6) {
-      alert("Cannot add more cards.!");
       return false;
     }
     const tableRanks = [];
@@ -295,7 +283,6 @@ class Game {
       }
     }
     if (candidates.length === 0) {
-      alert("Bot cannot defend and takes the cards.");
       this.endTurn("take");
       return false;
     }
@@ -313,22 +300,16 @@ class Game {
         }
       }
     }
-    alert(
-      `Bot defends ${attackCard.suit} ${attackCard.rank} with ${bestCandidate.cardObj.suit} ${bestCandidate.cardObj.rank}`,
-    );
     this.defense(bestCandidate.index, targetPairIndex);
     return true;
   }
   checkGameOver() {
     if (this.deckManager.cards.length === 0 && this.table.length === 0) {
       if (this.playerHand.length === 0 && this.botHand.length === 0) {
-        alert("It's a draw!");
         return "draw";
       } else if (this.playerHand.length === 0) {
-        alert("You win!");
         return "player";
       } else if (this.botHand.length === 0) {
-        alert("Bot wins. Game over!");
         return "bot";
       }
     }
