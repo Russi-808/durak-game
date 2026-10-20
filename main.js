@@ -234,24 +234,6 @@ class Game {
     }
     return tableRanks.includes(chosenCard.rank);
   }
-  checkGameOver() {
-    if (this.deckManager.cards.length === 0 && this.table.length === 0) {
-      if (this.playerHand.length === 0 && this.botHand.length === 0) {
-        console.log("Ничья!");
-        return "draw";
-      } else if (this.playerHand.length === 0) {
-        console.log("Победил игрок!");
-        return "player";
-      } else if (this.botHand.length === 0) {
-        console.log("Победил бот!");
-        return "bot";
-      }
-    }
-    return false;
-  }
-}
-// Logic for bot's attack and defense strategies
-class Bot {
   botAttack() {
     if (this.botHand.length === 0) return null;
     if (this.table.length === 0) {
@@ -337,5 +319,20 @@ class Bot {
     );
     this.defense(bestCandidate.index, targetPairIndex);
     return true;
+  }
+  checkGameOver() {
+    if (this.deckManager.cards.length === 0 && this.table.length === 0) {
+      if (this.playerHand.length === 0 && this.botHand.length === 0) {
+        console.log("Ничья!");
+        return "draw";
+      } else if (this.playerHand.length === 0) {
+        console.log("Победил игрок!");
+        return "player";
+      } else if (this.botHand.length === 0) {
+        console.log("Победил бот!");
+        return "bot";
+      }
+    }
+    return false;
   }
 }
