@@ -22,7 +22,7 @@ The project is built using a clean and modular architecture:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com
+  https://github.com/Russi-808/durak-game
    ```
 2. Navigate to the project folder:
    ```bash
