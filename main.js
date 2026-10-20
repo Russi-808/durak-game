@@ -68,7 +68,7 @@ class Game {
     this.playerHand = this.deckManager.dealHand(6);
     this.botHand = this.deckManager.dealHand(6);
     this.firstPlayer();
-    console.log("Игра начата:", this);
+    alert("Start the game:", this);
   }
   firstPlayer() {
     let playerMinRankValue = Infinity;
@@ -99,19 +99,22 @@ class Game {
       this.attacker = "bot";
       this.defender = "player";
     }
+    if (this.attacker === "player") {
+      alert("You start the game!");
+    } else {
+      alert("Bot starts the game!");
+    }
   }
   attack(cardIndex) {
     const attackerHand =
       this.attacker === "player" ? this.playerHand : this.botHand;
     const chosenCard = attackerHand[cardIndex];
     if (!chosenCard) {
-      console.log("Карта по такому индексу не найдена!");
       return;
     }
     if (this.table.length === 0) {
       attackerHand.splice(cardIndex, 1);
       this.table.push({ attackCard: chosenCard, defendCard: null });
-      console.log(`Совершен ход картой: ${chosenCard.suit} ${chosenCard.rank}`);
       return;
     }
     const tableRanks = [];
@@ -123,14 +126,11 @@ class Game {
       }
     }
     if (!tableRanks.includes(chosenCard.rank)) {
-      console.log(
-        `Нельзя подкинуть! Ранга карты: ${chosenCard.rank} нет на столе, выберите другую карту или завершите ход!`,
-      );
-      return;
+      return false;
     }
     attackerHand.splice(cardIndex, 1);
     this.table.push({ attackCard: chosenCard, defendCard: null });
-    console.log(`Подкинута карта: ${chosenCard.suit} ${chosenCard.rank}`);
+    alert(`Card played: ${chosenCard.suit} ${chosenCard.rank}`);
   }
   defense(defenseCardIndex, tablePairIndex) {
     const defenderHand =
@@ -138,11 +138,10 @@ class Game {
     const chosenDefenseCard = defenderHand[defenseCardIndex];
     const targetPair = this.table[tablePairIndex];
     if (!chosenDefenseCard || !targetPair) {
-      console.log("Некорректный индекс карты или пары на столе!");
+      alert("invalid card! Choose another one.");
       return;
     }
     if (targetPair.defendCard !== null) {
-      console.log("Эта карта на столе уже отбита!");
       return;
     }
     const attackCard = targetPair.attackCard;
@@ -159,9 +158,9 @@ class Game {
     if (isSameSuitAndHigher || isTrumpOverNormal || isTrumpOverTrump) {
       defenderHand.splice(defenseCardIndex, 1);
       targetPair.defendCard = chosenDefenseCard;
-      console.log("Карта успешно отбита!");
+      alert("Card successfully defended!");
     } else {
-      console.log("Этой картой нельзя побить карту на столе!");
+      alert("This card cannot be used to defend the card on the table!");
     }
   }
   beatCard() {
@@ -221,8 +220,8 @@ class Game {
     }
     const defenderHand =
       this.defender === "player" ? this.playerHand : this.botHand;
-    if (tableCardCount >= defenderHand.length) {
-      console.log("Нельзя подкинуть больше карт, чем есть у защищающегося!");
+    if (tableCardCount >= defenderHand.length || tableCardCount >= 6) {
+      alert("Cannot add more cards.!");
       return false;
     }
     const tableRanks = [];
@@ -296,7 +295,7 @@ class Game {
       }
     }
     if (candidates.length === 0) {
-      console.log("Бот не может отбиться и берет карты!");
+      alert("Bot cannot defend and takes the cards.");
       this.endTurn("take");
       return false;
     }
@@ -314,8 +313,8 @@ class Game {
         }
       }
     }
-    console.log(
-      `Бот отбивает карту ${attackCard.suit} ${attackCard.rank} своей картой ${bestCandidate.cardObj.suit} ${bestCandidate.cardObj.rank}`,
+    alert(
+      `Bot defends ${attackCard.suit} ${attackCard.rank} with ${bestCandidate.cardObj.suit} ${bestCandidate.cardObj.rank}`,
     );
     this.defense(bestCandidate.index, targetPairIndex);
     return true;
@@ -323,13 +322,13 @@ class Game {
   checkGameOver() {
     if (this.deckManager.cards.length === 0 && this.table.length === 0) {
       if (this.playerHand.length === 0 && this.botHand.length === 0) {
-        console.log("Ничья!");
+        alert("It's a draw!");
         return "draw";
       } else if (this.playerHand.length === 0) {
-        console.log("Победил игрок!");
+        alert("You win!");
         return "player";
       } else if (this.botHand.length === 0) {
-        console.log("Победил бот!");
+        alert("Bot wins. Game over!");
         return "bot";
       }
     }
