@@ -65,6 +65,8 @@ class Game {
     this.deckManager.shuffleDeck();
     const trumpCard = this.deckManager.cards[this.deckManager.cards.length - 1];
     this.trumpSuit = trumpCard.suit;
+    this.deckManager.cards.pop();
+    this.deckManager.cards.unshift(trumpCard);
     this.playerHand = this.deckManager.dealHand(6);
     this.botHand = this.deckManager.dealHand(6);
     this.firstPlayer();
@@ -194,8 +196,7 @@ class Game {
     if (action === "beat") {
       this.beatCard();
       [this.attacker, this.defender] = [this.defender, this.attacker];
-    }
-    if (action === "take") {
+    } else if (action === "take") {
       this.takeCard();
     }
     this.refillHands();
@@ -242,7 +243,7 @@ class Game {
       this.attack(bestCardIndex);
       return cardToAttack;
     }
-    for (let i = 0; i < this.botHand.length; i++) {
+    for (let i = this.botHand.length - 1; i >= 0; i--) {
       const botCard = this.botHand[i];
       if (this.canThrowIn(botCard)) {
         if (
