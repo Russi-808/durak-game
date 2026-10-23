@@ -7,11 +7,12 @@
   </head>
   <body>
     <div id="menu-container">
-      <h1>Durak</h1>  
+      <h1>Durak</h1>
       <div class="menu-options">
         <button id="start-game-btn">Start Game</button>
       </div>
     </div>
+
     <div id="game-container" class="hidden">
       <div id="main-play-zone">
         <div id="bot-hand" class="hand-container"></div>
@@ -19,18 +20,18 @@
         <div id="table-zone"></div>
         <div id="player-hand" class="hand-container"></div>
       </div>
+
       <div id="side-deck-panel">
         <div id="visual-deck-container">
-  <div id="trump-card-slot"></div>
-  <div id="deck-pile" class="card-ui shirt">🂠</div>
-  <div id="deck-count-bubble">24</div>
-</div>
+          <div id="trump-card-slot"></div>
+          <div id="deck-pile" class="card-ui shirt">🂠</div>
+          <div id="deck-count-bubble">24</div>
         </div>
         <div id="controls"><button id="action-btn">Beat / Take</button></div>
       </div>
     </div>
 
-    <script src="main.js"></script>
-    <script src="ui.js"></script>
+    <script type="module" src="main.js"></script>
+    <script type="module" src="ui.js"></script>
   </body>
 </html>

@@ -1,11 +1,7 @@
 "use strict";
-// Cards and ranks
-const card = {
-  suit: ["Spade", "Heart", "Diamond", "Club"],
-  rank: ["6", "7", "8", "9", "10", "J", "Q", "K", "A"],
-};
-// Class representing a single card
-class Card {
+import { gameSettings, getCardConfig } from "./settings.js";
+// Form card
+export class Card {
   constructor(suit, rank, value) {
     this.suit = suit;
     this.rank = rank;
@@ -16,12 +12,13 @@ class Card {
   }
 }
 // Creates a deck of cards and provides methods to shuffle and deal hands
-class Deck {
-  constructor(cardRef) {
+export class Deck {
+  constructor() {
     this.cards = [];
-    this.formCard(cardRef);
+    this.formCard();
   }
-  formCard(cardRef) {
+  formCard() {
+    const cardRef = getCardConfig();
     for (const currentSuit of cardRef.suit) {
       for (let i = 0; i < cardRef.rank.length; i++) {
         const currentRank = cardRef.rank[i];
@@ -47,21 +44,26 @@ class Deck {
   }
 }
 // Main game class that manages the game state, player and bot hands, and game logic
-class Game {
-  constructor(cardRef) {
+export class Game {
+  constructor() {
     this.trumpSuit = null;
     this.deck = [];
     this.table = [];
     this.discardPile = [];
     this.attacker = null;
     this.defender = null;
-    this.deckManager = new Deck(cardRef);
-    this.players = [
-      new Players(1, "Player", "human"),
-      new Bot(2, "Bot", "bot"),
-    ];
+    this.deckManager = new Deck();
+    this.players = [];
+    for (let i = 0; i < gameSettings.maxPlayers; i++) {
+      if (i === 0) {
+        this.players.push(new Players(i + 1, "Player", "human"));
+      } else {
+        this.players.push(new Bot(i + 1, `Bot ${i}`, "bot"));
+      }
+    }
   }
   startNewGame() {
+    this.deckManager = new Deck();
     this.table = [];
     this.discardPile = [];
     this.deckManager.shuffleDeck();
@@ -69,31 +71,32 @@ class Game {
     this.trumpSuit = trumpCard.suit;
     this.deckManager.cards.pop();
     this.deckManager.cards.unshift(trumpCard);
-    this.players[0].receiveCards(this.deckManager.dealHand(6));
-    this.players[1].receiveCards(this.deckManager.dealHand(6));
+    for (const player of this.players) {
+      player.receiveCards(this.deckManager.dealHand(6));
+    }
     this.firstPlayer();
   }
   firstPlayer() {
-    const playerMin = this.players[0].getMinTrump(this.trumpSuit);
-    const botMin = this.players[1].getMinTrump(this.trumpSuit);
-    if (playerMin === Infinity && botMin === Infinity) {
-      this.attacker = this.players[0];
-      this.defender = this.players[1];
-    } else if (playerMin < botMin) {
-      this.attacker = this.players[0];
-      this.defender = this.players[1];
-    } else {
-      this.attacker = this.players[1];
-      this.defender = this.players[0];
-    }
+    let minTrumpValue = Infinity;
+    let firstIndex = 0;
+    this.players.forEach((player, index) => {
+      const playerMin = player.getMinTrump(this.trumpSuit);
+      if (playerMin < minTrumpValue) {
+        minTrumpValue = playerMin;
+        firstIndex = index;
+      }
+    });
+    this.attacker = this.players[firstIndex];
+    const defenderIndex = (firstIndex + 1) % this.players.length;
+    this.defender = this.players[defenderIndex];
   }
-  attack(cardIndex) {
-    const chosenCard = this.attacker.hand[cardIndex];
+  attack(cardIndex, attackingPlayer = this.attacker) {
+    const chosenCard = attackingPlayer.hand[cardIndex];
     if (!chosenCard) {
       return;
     }
     if (this.table.length === 0) {
-      this.attacker.removeCard(cardIndex);
+      attackingPlayer.removeCard(cardIndex);
       this.table.push({ attackCard: chosenCard, defendCard: null });
       return;
     }
@@ -108,7 +111,7 @@ class Game {
     if (!tableRanks.includes(chosenCard.rank)) {
       return false;
     }
-    this.attacker.removeCard(cardIndex);
+    attackingPlayer.removeCard(cardIndex);
     this.table.push({ attackCard: chosenCard, defendCard: null });
   }
   defense(defenseCardIndex, tablePairIndex) {
@@ -156,29 +159,6 @@ class Game {
     this.defender.receiveCards(cardsToTake);
     this.table = [];
   }
-  refillHands() {
-    const attackerNeed = 6 - this.attacker.hand.length;
-    if (attackerNeed > 0 && this.deckManager.cards.length > 0) {
-      const countToDraw = Math.min(attackerNeed, this.deckManager.cards.length);
-      const drawnCards = this.deckManager.dealHand(countToDraw);
-      this.attacker.receiveCards(drawnCards);
-    }
-    const defenderNeed = 6 - this.defender.hand.length;
-    if (defenderNeed > 0 && this.deckManager.cards.length > 0) {
-      const countToDraw = Math.min(defenderNeed, this.deckManager.cards.length);
-      const drawnCards = this.deckManager.dealHand(countToDraw);
-      this.defender.receiveCards(drawnCards);
-    }
-  }
-  endTurn(action) {
-    if (action === "beat") {
-      this.beatCard();
-      [this.attacker, this.defender] = [this.defender, this.attacker];
-    } else if (action === "take") {
-      this.takeCard();
-    }
-    this.refillHands();
-  }
   canThrowIn(chosenCard) {
     if (this.table.length === 0) return false;
     let tableCardCount = 0;
@@ -198,22 +178,72 @@ class Game {
     }
     return tableRanks.includes(chosenCard.rank);
   }
+  botsThrowIn() {
+    let cardWasThrown = false;
+    do {
+      cardWasThrown = false;
+      for (const player of this.players) {
+        if (player.type === "human" || player === this.defender) continue;
+        const thrownCard = player.botAttack(this);
+        if (thrownCard) {
+          cardWasThrown = true;
+          break;
+        }
+      }
+    } while (cardWasThrown);
+  }
+  refillHands() {
+    const attackerIndex = this.players.indexOf(this.attacker);
+    const numPlayers = this.players.length;
+    for (let i = 0; i < numPlayers; i++) {
+      const playerIndex = (attackerIndex + i) % numPlayers;
+      const player = this.players[playerIndex];
+      if (player === this.defender) continue;
+      const need = 6 - player.hand.length;
+      if (need > 0 && this.deckManager.cards.length > 0) {
+        const countToDraw = Math.min(need, this.deckManager.cards.length);
+        const drawnCards = this.deckManager.dealHand(countToDraw);
+        player.receiveCards(drawnCards);
+      }
+    }
+    const defenderNeed = 6 - this.defender.hand.length;
+    if (defenderNeed > 0 && this.deckManager.cards.length > 0) {
+      const countToDraw = Math.min(defenderNeed, this.deckManager.cards.length);
+      const drawnCards = this.deckManager.dealHand(countToDraw);
+      this.defender.receiveCards(drawnCards);
+    }
+  }
+  endTurn(action) {
+    const defenderIndex = this.players.indexOf(this.defender);
+    if (action === "beat") {
+      this.beatCard();
+      this.attacker = this.defender;
+      this.defender = this.players[(defenderIndex + 1) % this.players.length];
+    } else if (action === "take") {
+      this.takeCard();
+      this.attacker = this.players[(defenderIndex + 1) % this.players.length];
+      this.defender = this.players[(defenderIndex + 2) % this.players.length];
+    }
+    this.refillHands();
+  }
   checkGameOver() {
     if (this.deckManager.cards.length === 0 && this.table.length === 0) {
-      const playerHandLength = this.players[0].hand.length;
-      const botHandLength = this.players[1].hand.length;
-      if (playerHandLength === 0 && botHandLength === 0) {
+      const playersWithCards = this.players.filter(
+        (player) => player.hand.length > 0,
+      );
+      if (playersWithCards.length === 0) {
         return "draw";
-      } else if (playerHandLength === 0) {
-        return "human";
-      } else if (botHandLength === 0) {
-        return "bot";
       }
+      if (playersWithCards.length > 1) {
+        return false;
+      }
+      const loser = playersWithCards[0];
+      return loser;
     }
     return false;
   }
 }
-class Players {
+export class Players {
   constructor(id, name, type = "human") {
     this.id = id;
     this.name = name;
@@ -237,7 +267,7 @@ class Players {
     return this.hand.splice(cardIndex, 1)[0];
   }
 }
-class Bot extends Players {
+export class Bot extends Players {
   constructor(id, name, type = "bot") {
     super(id, name, type);
   }
@@ -259,7 +289,7 @@ class Bot extends Players {
         }
       }
       const cardToAttack = this.hand[bestCardIndex];
-      game.attack(bestCardIndex);
+      game.attack(bestCardIndex, this);
       return cardToAttack;
     }
     for (let i = this.hand.length - 1; i >= 0; i--) {
@@ -271,7 +301,7 @@ class Bot extends Players {
         ) {
           continue;
         }
-        game.attack(i);
+        game.attack(i, this);
         return botCard;
       }
     }
