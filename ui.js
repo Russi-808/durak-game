@@ -20,7 +20,7 @@ startGameBtn.addEventListener("click", () => {
   gameContainer.classList.remove("hidden");
   game.startNewGame();
   updateUI();
-  if (game.attacker === "bot") {
+  if (game.attacker.type === "bot") {
     triggerBotTurn();
   }
 });
@@ -66,12 +66,12 @@ function updateUI() {
     }
   }
   playerHandEl.innerHTML = "";
-  game.playerHand.forEach((cardObj, index) => {
+  game.players[0].hand.forEach((cardObj, index) => {
     const cardDiv = createCardDOM(cardObj);
     cardDiv.addEventListener("click", () => {
       if (isBotThinking) return;
 
-      if (game.attacker === "player") {
+      if (game.attacker.type === "human") {
         const oldTableLength = game.table.length;
         game.attack(index);
 
@@ -94,7 +94,7 @@ function updateUI() {
             const hasUnbeatenCards = game.table.some(
               (pair) => pair.defendCard === null,
             );
-            if (!hasUnbeatenCards && game.attacker === "bot") {
+            if (!hasUnbeatenCards && game.attacker.type === "bot") {
               triggerBotTurn();
             }
           } else {
@@ -106,7 +106,7 @@ function updateUI() {
     playerHandEl.appendChild(cardDiv);
   });
   botHandEl.innerHTML = "";
-  game.botHand.forEach((cardObj) => {
+  game.players[1].hand.forEach((cardObj) => {
     const cardDiv = createCardDOM(cardObj, true);
     botHandEl.appendChild(cardDiv);
   });
@@ -127,7 +127,7 @@ function updateUI() {
     tableZoneEl.appendChild(pairDiv);
   });
   const hasUnbeatenCards = game.table.some((pair) => pair.defendCard === null);
-  if (game.attacker === "player") {
+  if (game.attacker.type === "human") {
     actionBtn.innerText = "Done";
     actionBtn.disabled = game.table.length === 0;
   } else {
@@ -143,7 +143,7 @@ function updateUI() {
   if (winner) {
     isBotThinking = false;
     if (winner === "draw") showGameMessage("Draw! Game Over.");
-    else if (winner === "player") showGameMessage("You Won! Congratulations!");
+    else if (winner === "human") showGameMessage("You Won! Congratulations!");
     else if (winner === "bot")
       showGameMessage("Bot Won! Better luck next time.");
     actionBtn.disabled = true;
@@ -159,7 +159,7 @@ actionBtn.addEventListener("click", () => {
     return;
   }
 
-  if (game.attacker === "player") {
+  if (game.attacker.type === "human") {
     game.endTurn("beat");
     showGameMessage("Cards moved to discard pile.");
     updateUI();
@@ -173,7 +173,7 @@ actionBtn.addEventListener("click", () => {
       showGameMessage("You took the cards.");
     }
     updateUI();
-    if (game.attacker === "bot") {
+    if (game.attacker.type === "bot") {
       triggerBotTurn();
     }
   }
@@ -191,8 +191,8 @@ function botTurn() {
     return;
   }
 
-  if (game.attacker === "bot") {
-    const attackedCard = game.botAttack();
+  if (game.attacker.type === "bot") {
+    const attackedCard = game.players[1].botAttack(game);
     if (attackedCard) {
       showGameMessage("Bot attacks!");
       updateUI();
@@ -206,7 +206,7 @@ function botTurn() {
       isBotThinking = false;
     }
   } else {
-    const success = game.botDefense();
+    const success = game.players[1].botDefense(game);
     if (success) {
       showGameMessage("Bot successfully defended!");
       updateUI();
