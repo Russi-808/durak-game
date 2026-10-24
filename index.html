@@ -10,9 +10,32 @@
       <h1>Durak</h1>
       <div class="menu-options">
         <button id="start-game-btn">Start Game</button>
+        <button id="settings-btn">Settings</button>
       </div>
     </div>
 
+    <!-- Модальное окно настроек -->
+    <div id="settings-modal" class="hidden">
+      <h2>Settings</h2>
+
+      <div class="settings-options">
+        <p>Deck Size:</p>
+        <div class="deck-buttons">
+          <button id="btn-36" class="setting-btn active">36 Cards</button>
+          <button id="btn-52" class="setting-btn">52 Cards</button>
+        </div>
+      </div>
+
+      <div class="settings-options">
+        <p>Game Mode:</p>
+        <div class="mode-buttons">
+          <button id="btn-classic" class="setting-btn active">Classic</button>
+          <button id="btn-transfer" class="setting-btn">Transferable</button>
+        </div>
+      </div>
+
+      <button id="close-settings-btn">Back</button>
+    </div>
     <div id="game-container" class="hidden">
       <div id="main-play-zone">
         <div id="bot-hand" class="hand-container"></div>

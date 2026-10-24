@@ -179,18 +179,16 @@ export class Game {
     return tableRanks.includes(chosenCard.rank);
   }
   botsThrowIn() {
-    let cardWasThrown = false;
-    do {
-      cardWasThrown = false;
-      for (const player of this.players) {
-        if (player.type === "human" || player === this.defender) continue;
-        const thrownCard = player.botAttack(this);
-        if (thrownCard) {
-          cardWasThrown = true;
-          break;
-        }
+    const hasUnbeatenCard = this.table.some((pair) => pair.defendCard === null);
+    if (hasUnbeatenCard) return;
+
+    for (const player of this.players) {
+      if (player.type === "human" || player === this.defender) continue;
+      const thrownCard = player.botAttack(this);
+      if (thrownCard) {
+        break;
       }
-    } while (cardWasThrown);
+    }
   }
   refillHands() {
     const attackerIndex = this.players.indexOf(this.attacker);

@@ -17,7 +17,12 @@ const btn36 = document.getElementById("btn-36");
 const btn52 = document.getElementById("btn-52");
 const startGameBtn = document.getElementById("start-game-btn");
 const actionBtn = document.getElementById("action-btn");
+const settingsBtn = document.getElementById("settings-btn");
+const settingsModal = document.getElementById("settings-modal");
+const closeSettingsBtn = document.getElementById("close-settings-btn");
 
+const btnClassic = document.getElementById("btn-classic");
+const btnTransfer = document.getElementById("btn-transfer");
 // Game zones
 const botHandEl = document.getElementById("bot-hand");
 const tableZoneEl = document.getElementById("table-zone");
@@ -35,13 +40,16 @@ let isBotThinking = false;
 if (btn36 && btn52) {
   btn36.addEventListener("click", () => {
     gameSettings.deckSize = 36;
+    btn36.classList.add("active");
+    btn52.classList.remove("active");
   });
 
   btn52.addEventListener("click", () => {
     gameSettings.deckSize = 52;
+    btn52.classList.add("active");
+    btn36.classList.remove("active");
   });
 }
-
 startGameBtn.addEventListener("click", () => {
   menuContainer.classList.add("hidden");
   gameContainer.classList.remove("hidden");
@@ -53,7 +61,27 @@ startGameBtn.addEventListener("click", () => {
     triggerBotTurn();
   }
 });
+settingsBtn.addEventListener("click", () => {
+  settingsModal.classList.remove("hidden");
+});
 
+closeSettingsBtn.addEventListener("click", () => {
+  settingsModal.classList.add("hidden");
+});
+
+if (btnClassic && btnTransfer) {
+  btnClassic.addEventListener("click", () => {
+    gameSettings.mode = "classic";
+    btnClassic.classList.add("active");
+    btnTransfer.classList.remove("active");
+  });
+
+  btnTransfer.addEventListener("click", () => {
+    gameSettings.mode = "transfer";
+    btnTransfer.classList.add("active");
+    btnClassic.classList.remove("active");
+  });
+}
 // ==========================================
 // 3. HELPER FUNCTIONS AND RENDERING (RENDER)
 // ==========================================
@@ -255,7 +283,6 @@ function botTurn() {
   if (game.attacker.type === "bot") {
     const attackedCard = game.players[1].botAttack(game);
     if (attackedCard) {
-      game.botsThrowIn(); // Try to throw in remaining cards
       showGameMessage("Bot attacks!");
       updateUI();
       isBotThinking = false;
