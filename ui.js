@@ -172,7 +172,7 @@ function updateUI() {
   const hasUnbeatenCards = game.table.some((pair) => pair.defendCard === null);
   if (game.attacker.type === "human") {
     actionBtn.innerText = "Done";
-    actionBtn.disabled = game.table.length === 0;
+    actionBtn.disabled = game.table.length === 0 || hasUnbeatenCards;
   } else {
     if (game.table.length > 0 && !hasUnbeatenCards) {
       actionBtn.innerText = "Done (Your Turn)";
@@ -203,6 +203,10 @@ function handlePlayerCardClick(index) {
   const cardToPlay = player.hand[index];
   if (game.attacker.type === "human") {
     const oldTableLength = game.table.length;
+    if (game.table.length > 0 && !game.canThrowIn(cardToPlay)) {
+      showGameMessage("You cannot throw in this card.");
+      return;
+    }
     game.attack(index);
     if (game.table.length > oldTableLength) {
       updateUI();

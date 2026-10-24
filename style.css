@@ -86,17 +86,6 @@ body {
   height: 100%;
   width: 75%;
 }
-
-#side-deck-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 50px;
-  width: 20%;
-  height: 100%;
-}
-
 /* ==========================================================================
    4. Game Zones and Table Cards
    ========================================================================== */
@@ -222,7 +211,7 @@ body {
    ========================================================================== */
 #game-message {
   min-height: 24px;
-  font-size: 1.2 rem;
+  font-size: 1.2rem;
   font-weight: bold;
   color: #ffeb3b;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);

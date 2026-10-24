@@ -161,12 +161,13 @@ export class Game {
   }
   canThrowIn(chosenCard) {
     if (this.table.length === 0) return false;
-    let tableCardCount = 0;
-    for (const pair of this.table) {
-      tableCardCount++;
-      if (pair.defendCard) tableCardCount++;
+    if (this.table.length >= 6) {
+      return false;
     }
-    if (tableCardCount >= this.defender.hand.length || tableCardCount >= 6) {
+    const unbeatenCardsCount = this.table.filter(
+      (pair) => pair.defendCard === null,
+    ).length;
+    if (unbeatenCardsCount >= this.defender.hand.length) {
       return false;
     }
     const tableRanks = [];
@@ -177,18 +178,6 @@ export class Game {
       }
     }
     return tableRanks.includes(chosenCard.rank);
-  }
-  botsThrowIn() {
-    const hasUnbeatenCard = this.table.some((pair) => pair.defendCard === null);
-    if (hasUnbeatenCard) return;
-
-    for (const player of this.players) {
-      if (player.type === "human" || player === this.defender) continue;
-      const thrownCard = player.botAttack(this);
-      if (thrownCard) {
-        break;
-      }
-    }
   }
   canTransfer(chosenCard) {
     if (gameSettings.mode !== "transfer") return false;
