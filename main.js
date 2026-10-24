@@ -190,6 +190,26 @@ export class Game {
       }
     }
   }
+  canTransfer(chosenCard) {
+    if (gameSettings.mode !== "transfer") return false;
+    if (this.table.length === 0) return false;
+    const hasDefendedCards = this.table.some(
+      (pair) => pair.defendCard !== null,
+    );
+    if (hasDefendedCards) return false;
+    if (this.attacker.hand.length <= this.table.length) return false;
+    return this.table.some((pair) => pair.attackCard.rank === chosenCard.rank);
+  }
+  transfer(cardIndex, player = this.defender) {
+    const chosenCard = player.hand[cardIndex];
+    if (!chosenCard || !this.canTransfer(chosenCard)) return false;
+    player.removeCard(cardIndex);
+    this.table.push({ attackCard: chosenCard, defendCard: null });
+    const temp = this.attacker;
+    this.attacker = this.defender;
+    this.defender = temp;
+    return true;
+  }
   refillHands() {
     const attackerIndex = this.players.indexOf(this.attacker);
     const numPlayers = this.players.length;
@@ -306,49 +326,62 @@ export class Bot extends Players {
     return null;
   }
   botDefense(game) {
-    let targetPairIndex = -1;
-    for (let i = 0; i < game.table.length; i++) {
-      if (game.table[i].defendCard === null) {
-        targetPairIndex = i;
-        break;
-      }
-    }
-    if (targetPairIndex === -1) return false;
-    const attackCard = game.table[targetPairIndex].attackCard;
-    const candidates = [];
-    for (let i = 0; i < this.hand.length; i++) {
-      const botCard = this.hand[i];
-      const isSameSuitAndHigher =
-        botCard.suit === attackCard.suit && botCard.value > attackCard.value;
-      const isTrumpOverNormal =
-        botCard.suit === game.trumpSuit && attackCard.suit !== game.trumpSuit;
-      const isTrumpOverTrump =
-        botCard.suit === game.trumpSuit &&
-        attackCard.suit === game.trumpSuit &&
-        botCard.value > attackCard.value;
-      if (isSameSuitAndHigher || isTrumpOverNormal || isTrumpOverTrump) {
-        candidates.push({ cardObj: botCard, index: i });
-      }
-    }
-    if (candidates.length === 0) {
-      game.endTurn("take");
-      return false;
-    }
-    let bestCandidate = candidates[0];
-    for (let i = 1; i < candidates.length; i++) {
-      const current = candidates[i];
-      const best = bestCandidate;
-      const bestIsTrump = best.cardObj.suit === game.trumpSuit;
-      const currentIsTrump = current.cardObj.suit === game.trumpSuit;
-      if (bestIsTrump && !currentIsTrump) {
-        bestCandidate = current;
-      } else if (bestIsTrump === currentIsTrump) {
-        if (current.cardObj.value < best.cardObj.value) {
-          bestCandidate = current;
+    if (gameSettings.mode === "transfer") {
+      for (let i = 0; i < this.hand.length; i++) {
+        if (game.canTransfer(this.hand[i])) {
+          game.transfer(i, this);
+          return "transferred";
         }
       }
     }
-    game.defense(bestCandidate.index, targetPairIndex);
+    while (game.table.some((pair) => pair.defendCard === null)) {
+      let targetPairIndex = -1;
+      for (let i = 0; i < game.table.length; i++) {
+        if (game.table[i].defendCard === null) {
+          targetPairIndex = i;
+          break;
+        }
+      }
+      if (targetPairIndex === -1) return false;
+      const attackCard = game.table[targetPairIndex].attackCard;
+      const candidates = [];
+      for (let i = 0; i < this.hand.length; i++) {
+        const botCard = this.hand[i];
+        const isSameSuitAndHigher =
+          botCard.suit === attackCard.suit && botCard.value > attackCard.value;
+        const isTrumpOverNormal =
+          botCard.suit === game.trumpSuit && attackCard.suit !== game.trumpSuit;
+        const isTrumpOverTrump =
+          botCard.suit === game.trumpSuit &&
+          attackCard.suit === game.trumpSuit &&
+          botCard.value > attackCard.value;
+        if (isSameSuitAndHigher || isTrumpOverNormal || isTrumpOverTrump) {
+          candidates.push({ cardObj: botCard, index: i });
+        }
+      }
+      if (candidates.length === 0) {
+        game.endTurn("take");
+        return false;
+      }
+      let bestCandidate = candidates[0];
+      for (let i = 1; i < candidates.length; i++) {
+        const current = candidates[i];
+        const best = bestCandidate;
+        const bestIsTrump = best.cardObj.suit === game.trumpSuit;
+        const currentIsTrump = current.cardObj.suit === game.trumpSuit;
+        if (bestIsTrump && !currentIsTrump) {
+          bestCandidate = current;
+        } else if (bestIsTrump === currentIsTrump) {
+          if (current.cardObj.value < best.cardObj.value) {
+            bestCandidate = current;
+          }
+        }
+      }
+      const actualIndex = this.hand.indexOf(bestCandidate.cardObj);
+      if (actualIndex !== -1) {
+        game.defense(actualIndex, targetPairIndex);
+      }
+    }
     return true;
   }
 }

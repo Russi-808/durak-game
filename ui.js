@@ -184,58 +184,93 @@ function updateUI() {
   }
 
   // 6. Check game over
-  const winner = game.checkGameOver();
-  if (winner) {
+  const loser = game.checkGameOver();
+  if (loser) {
     isBotThinking = false;
-    if (winner === "draw") showGameMessage("Draw! Game Over.");
-    else if (winner === "human" || winner?.type === "human")
-      showGameMessage("You Won! Congratulations!");
-    else showGameMessage("Bot Won! Better luck next time.");
+    if (loser === "draw") showGameMessage("Draw! Game Over.");
+    else if (loser === "human" || loser?.type === "human")
+      showGameMessage("Bot Won! Better luck next time.");
+    else showGameMessage("You Won! Congratulations!");
     actionBtn.disabled = true;
   }
 }
-
 // ==========================================
 // 4. GAME LOGIC AND UI EVENTS
 // ==========================================
 function handlePlayerCardClick(index) {
   if (isBotThinking) return;
-
+  const player = game.players[0];
+  const cardToPlay = player.hand[index];
   if (game.attacker.type === "human") {
     const oldTableLength = game.table.length;
     game.attack(index);
-
     if (game.table.length > oldTableLength) {
-      game.botsThrowIn(); // Bots throw in if possible
       updateUI();
       triggerBotTurn();
     } else {
       showGameMessage("You cannot attack with this card.");
     }
-  } else {
-    const targetPairIndex = game.table.findIndex(
-      (pair) => pair.defendCard === null,
+    return;
+  }
+  const canTransfer = game.canTransfer(cardToPlay);
+  const targetPairIndex = game.table.findIndex(
+    (pair) => pair.defendCard === null,
+  );
+  let canDefend = false;
+  if (targetPairIndex !== -1) {
+    const attackCard = game.table[targetPairIndex].attackCard;
+    const isSameSuitAndHigher =
+      cardToPlay.suit === attackCard.suit &&
+      cardToPlay.value > attackCard.value;
+    const isTrumpOverNormal =
+      cardToPlay.suit === game.trumpSuit && attackCard.suit !== game.trumpSuit;
+    const isTrumpOverTrump =
+      cardToPlay.suit === game.trumpSuit &&
+      attackCard.suit === game.trumpSuit &&
+      cardToPlay.value > attackCard.value;
+
+    canDefend = isSameSuitAndHigher || isTrumpOverNormal || isTrumpOverTrump;
+  }
+  if (canTransfer && canDefend) {
+    const wantTransfer = confirm(
+      "Хотите перевести карту? (ОК — перевести, Отмена — побить)",
     );
-
-    if (targetPairIndex !== -1) {
-      const oldDefendCard = game.table[targetPairIndex].defendCard;
-      game.defense(index, targetPairIndex);
-
-      if (game.table[targetPairIndex].defendCard !== oldDefendCard) {
-        updateUI();
-        const hasUnbeatenCards = game.table.some(
-          (pair) => pair.defendCard === null,
-        );
-        if (!hasUnbeatenCards && game.attacker.type === "bot") {
-          triggerBotTurn();
-        }
-      } else {
-        showGameMessage("You cannot defend with this card.");
-      }
+    if (wantTransfer) {
+      game.transfer(index, player);
+      showGameMessage("You transferred the attack!");
+      updateUI();
+      triggerBotTurn();
+    } else {
+      executeDefense(index, targetPairIndex);
     }
+    return;
+  }
+  if (canTransfer) {
+    game.transfer(index, player);
+    showGameMessage("You transferred the attack!");
+    updateUI();
+    triggerBotTurn();
+    return;
+  }
+  if (targetPairIndex !== -1) {
+    executeDefense(index, targetPairIndex);
   }
 }
-
+function executeDefense(cardIndex, targetPairIndex) {
+  const oldDefendCard = game.table[targetPairIndex].defendCard;
+  game.defense(cardIndex, targetPairIndex);
+  if (game.table[targetPairIndex].defendCard !== oldDefendCard) {
+    updateUI();
+    const hasUnbeatenCards = game.table.some(
+      (pair) => pair.defendCard === null,
+    );
+    if (!hasUnbeatenCards && game.attacker.type === "bot") {
+      triggerBotTurn();
+    }
+  } else {
+    showGameMessage("You cannot defend or transfer with this card.");
+  }
+}
 actionBtn.addEventListener("click", () => {
   if (isBotThinking) return;
   const hasUnbeatenCards = game.table.some((pair) => pair.defendCard === null);
@@ -295,8 +330,12 @@ function botTurn() {
       isBotThinking = false;
     }
   } else {
-    const success = game.players[1].botDefense(game);
-    if (success) {
+    const result = game.players[1].botDefense(game);
+    if (result === "transferred") {
+      showGameMessage("Bot transferred the attack back to you!");
+      updateUI();
+      isBotThinking = false;
+    } else if (result === true) {
       showGameMessage("Bot successfully defended!");
       updateUI();
       isBotThinking = false;
