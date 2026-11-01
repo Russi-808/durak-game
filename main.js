@@ -1,4 +1,5 @@
 "use strict";
+import { botAttack, botDefense } from "./ai.js";
 import { gameSettings, getCardConfig } from "./settings.js";
 // Form card
 export class Card {
@@ -279,98 +280,10 @@ export class Bot extends Players {
     super(id, name, type);
   }
   botAttack(game) {
-    if (this.hand.length === 0) return null;
-    if (game.table.length === 0) {
-      let bestCardIndex = 0;
-      for (let i = 1; i < this.hand.length; i++) {
-        const currentCard = this.hand[i];
-        const bestCard = this.hand[bestCardIndex];
-        const bestIsTrump = bestCard.suit === game.trumpSuit;
-        const currentIsTrump = currentCard.suit === game.trumpSuit;
-        if (bestIsTrump && !currentIsTrump) {
-          bestCardIndex = i;
-        } else if (bestIsTrump === currentIsTrump) {
-          if (currentCard.value < bestCard.value) {
-            bestCardIndex = i;
-          }
-        }
-      }
-      const cardToAttack = this.hand[bestCardIndex];
-      game.attack(bestCardIndex, this);
-      return cardToAttack;
-    }
-    for (let i = this.hand.length - 1; i >= 0; i--) {
-      const botCard = this.hand[i];
-      if (game.canThrowIn(botCard)) {
-        if (
-          botCard.suit === game.trumpSuit &&
-          game.deckManager.cards.length > 0
-        ) {
-          continue;
-        }
-        game.attack(i, this);
-        return botCard;
-      }
-    }
-    return null;
+    return botAttack(this, game);
   }
+
   botDefense(game) {
-    if (gameSettings.mode === "transfer") {
-      for (let i = 0; i < this.hand.length; i++) {
-        if (game.canTransfer(this.hand[i])) {
-          game.transfer(i, this);
-          return "transferred";
-        }
-      }
-    }
-    while (game.table.some((pair) => pair.defendCard === null)) {
-      let targetPairIndex = -1;
-      for (let i = 0; i < game.table.length; i++) {
-        if (game.table[i].defendCard === null) {
-          targetPairIndex = i;
-          break;
-        }
-      }
-      if (targetPairIndex === -1) return false;
-      const attackCard = game.table[targetPairIndex].attackCard;
-      const candidates = [];
-      for (let i = 0; i < this.hand.length; i++) {
-        const botCard = this.hand[i];
-        const isSameSuitAndHigher =
-          botCard.suit === attackCard.suit && botCard.value > attackCard.value;
-        const isTrumpOverNormal =
-          botCard.suit === game.trumpSuit && attackCard.suit !== game.trumpSuit;
-        const isTrumpOverTrump =
-          botCard.suit === game.trumpSuit &&
-          attackCard.suit === game.trumpSuit &&
-          botCard.value > attackCard.value;
-        if (isSameSuitAndHigher || isTrumpOverNormal || isTrumpOverTrump) {
-          candidates.push({ cardObj: botCard, index: i });
-        }
-      }
-      if (candidates.length === 0) {
-        game.endTurn("take");
-        return false;
-      }
-      let bestCandidate = candidates[0];
-      for (let i = 1; i < candidates.length; i++) {
-        const current = candidates[i];
-        const best = bestCandidate;
-        const bestIsTrump = best.cardObj.suit === game.trumpSuit;
-        const currentIsTrump = current.cardObj.suit === game.trumpSuit;
-        if (bestIsTrump && !currentIsTrump) {
-          bestCandidate = current;
-        } else if (bestIsTrump === currentIsTrump) {
-          if (current.cardObj.value < best.cardObj.value) {
-            bestCandidate = current;
-          }
-        }
-      }
-      const actualIndex = this.hand.indexOf(bestCandidate.cardObj);
-      if (actualIndex !== -1) {
-        game.defense(actualIndex, targetPairIndex);
-      }
-    }
-    return true;
+    return botDefense(this, game);
   }
 }

@@ -3,6 +3,7 @@ export const gameSettings = {
   deckSize: 36,
   maxPlayers: 2,
   mode: "classic",
+  ai: "expert",
 };
 export function getCardConfig() {
   const suits = ["Spade", "Heart", "Diamond", "Club"];

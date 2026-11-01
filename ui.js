@@ -30,7 +30,8 @@ const playerHandEl = document.getElementById("player-hand");
 const gameMessageEl = document.getElementById("game-message");
 const deckCountBubbleEl = document.getElementById("deck-count-bubble");
 const trumpCardSlotEl = document.getElementById("trump-card-slot");
-
+const btnAiSimple = document.getElementById("btn-ai-simple");
+const btnAiExpert = document.getElementById("btn-ai-expert");
 // UI state
 let isBotThinking = false;
 
@@ -80,6 +81,19 @@ if (btnClassic && btnTransfer) {
     gameSettings.mode = "transfer";
     btnTransfer.classList.add("active");
     btnClassic.classList.remove("active");
+  });
+}
+if (btnAiSimple && btnAiExpert) {
+  btnAiSimple.addEventListener("click", () => {
+    gameSettings.ai = "simple";
+    btnAiSimple.classList.add("active");
+    btnAiExpert.classList.remove("active");
+  });
+
+  btnAiExpert.addEventListener("click", () => {
+    gameSettings.ai = "expert";
+    btnAiExpert.classList.add("active");
+    btnAiSimple.classList.remove("active");
   });
 }
 // ==========================================
@@ -318,35 +332,30 @@ function botTurn() {
     isBotThinking = false;
     return;
   }
-
   if (game.attacker.type === "bot") {
     const attackedCard = game.players[1].botAttack(game);
     if (attackedCard) {
       showGameMessage("Bot attacks!");
       updateUI();
-      isBotThinking = false;
     } else {
       if (game.table.length > 0) {
         game.endTurn("beat");
         showGameMessage("Successful defense! Your turn to attack.");
       }
       updateUI();
-      isBotThinking = false;
     }
   } else {
     const result = game.players[1].botDefense(game);
     if (result === "transferred") {
       showGameMessage("Bot transferred the attack back to you!");
       updateUI();
-      isBotThinking = false;
     } else if (result === true) {
       showGameMessage("Bot successfully defended!");
       updateUI();
-      isBotThinking = false;
     } else {
       showGameMessage("Bot couldn't defend and took cards!");
       updateUI();
-      isBotThinking = false;
     }
   }
+  isBotThinking = false;
 }
