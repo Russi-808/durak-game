@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="eng">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>durak</title>
@@ -7,10 +7,37 @@
   </head>
   <body>
     <div id="menu-container">
-      <h1>Durak</h1>  
+      <h1>Durak</h1>
       <div class="menu-options">
         <button id="start-game-btn">Start Game</button>
+        <button id="settings-btn">Settings</button>
       </div>
+    </div>
+    <div id="settings-modal" class="hidden">
+      <h2>Settings</h2>
+      <div class="settings-options">
+        <p>Deck Size:</p>
+        <div class="deck-buttons">
+          <button id="btn-36" class="setting-btn active">36 Cards</button>
+          <button id="btn-52" class="setting-btn">52 Cards</button>
+        </div>
+      </div>
+      <div class="settings-options">
+        <p>Game Mode:</p>
+        <div class="mode-buttons">
+          <button id="btn-classic" class="setting-btn active">Classic</button>
+          <button id="btn-transfer" class="setting-btn">Transferable</button>
+        </div>
+      </div>
+      <div class="settings-options">
+        <p>AI Difficulty:</p>
+        <div class="ai-buttons">
+          <button id="btn-ai-simple" class="setting-btn active">Simple</button>
+          <button id="btn-ai-expert" class="setting-btn">Expert</button>
+        </div>
+      </div>
+
+      <button id="close-settings-btn">Back</button>
     </div>
     <div id="game-container" class="hidden">
       <div id="main-play-zone">
@@ -19,18 +46,18 @@
         <div id="table-zone"></div>
         <div id="player-hand" class="hand-container"></div>
       </div>
+
       <div id="side-deck-panel">
         <div id="visual-deck-container">
-  <div id="trump-card-slot"></div>
-  <div id="deck-pile" class="card-ui shirt">🂠</div>
-  <div id="deck-count-bubble">24</div>
-</div>
+          <div id="trump-card-slot"></div>
+          <div id="deck-pile" class="card-ui shirt">🂠</div>
+          <div id="deck-count-bubble">24</div>
         </div>
         <div id="controls"><button id="action-btn">Beat / Take</button></div>
       </div>
     </div>
 
-    <script src="main.js"></script>
-    <script src="ui.js"></script>
+    <script type="module" src="main.js"></script>
+    <script type="module" src="ui.js"></script>
   </body>
 </html>

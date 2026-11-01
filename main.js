@@ -1,11 +1,8 @@
 "use strict";
-// Cards and ranks
-const card = {
-  suit: ["Spade", "Heart", "Diamond", "Club"],
-  rank: ["6", "7", "8", "9", "10", "J", "Q", "K", "A"],
-};
-// Class representing a single card
-class Card {
+import { botAttack, botDefense } from "./ai.js";
+import { gameSettings, getCardConfig } from "./settings.js";
+// Form card
+export class Card {
   constructor(suit, rank, value) {
     this.suit = suit;
     this.rank = rank;
@@ -16,12 +13,13 @@ class Card {
   }
 }
 // Creates a deck of cards and provides methods to shuffle and deal hands
-class Deck {
-  constructor(cardRef) {
+export class Deck {
+  constructor() {
     this.cards = [];
-    this.formCard(cardRef);
+    this.formCard();
   }
-  formCard(cardRef) {
+  formCard() {
+    const cardRef = getCardConfig();
     for (const currentSuit of cardRef.suit) {
       for (let i = 0; i < cardRef.rank.length; i++) {
         const currentRank = cardRef.rank[i];
@@ -47,19 +45,26 @@ class Deck {
   }
 }
 // Main game class that manages the game state, player and bot hands, and game logic
-class Game {
-  constructor(cardRef) {
+export class Game {
+  constructor() {
     this.trumpSuit = null;
     this.deck = [];
-    this.playerHand = [];
-    this.botHand = [];
     this.table = [];
     this.discardPile = [];
     this.attacker = null;
     this.defender = null;
-    this.deckManager = new Deck(cardRef);
+    this.deckManager = new Deck();
+    this.players = [];
+    for (let i = 0; i < gameSettings.maxPlayers; i++) {
+      if (i === 0) {
+        this.players.push(new Players(i + 1, "Player", "human"));
+      } else {
+        this.players.push(new Bot(i + 1, `Bot ${i}`, "bot"));
+      }
+    }
   }
   startNewGame() {
+    this.deckManager = new Deck();
     this.table = [];
     this.discardPile = [];
     this.deckManager.shuffleDeck();
@@ -67,49 +72,32 @@ class Game {
     this.trumpSuit = trumpCard.suit;
     this.deckManager.cards.pop();
     this.deckManager.cards.unshift(trumpCard);
-    this.playerHand = this.deckManager.dealHand(6);
-    this.botHand = this.deckManager.dealHand(6);
+    for (const player of this.players) {
+      player.receiveCards(this.deckManager.dealHand(6));
+    }
     this.firstPlayer();
   }
   firstPlayer() {
-    let playerMinRankValue = Infinity;
-    let botMinRankValue = Infinity;
-    for (const currentCard of this.playerHand) {
-      if (
-        currentCard.suit === this.trumpSuit &&
-        currentCard.value < playerMinRankValue
-      ) {
-        playerMinRankValue = currentCard.value;
+    let minTrumpValue = Infinity;
+    let firstIndex = 0;
+    this.players.forEach((player, index) => {
+      const playerMin = player.getMinTrump(this.trumpSuit);
+      if (playerMin < minTrumpValue) {
+        minTrumpValue = playerMin;
+        firstIndex = index;
       }
-    }
-    for (const currentCard of this.botHand) {
-      if (
-        currentCard.suit === this.trumpSuit &&
-        currentCard.value < botMinRankValue
-      ) {
-        botMinRankValue = currentCard.value;
-      }
-    }
-    if (playerMinRankValue === Infinity && botMinRankValue === Infinity) {
-      this.attacker = "player";
-      this.defender = "bot";
-    } else if (playerMinRankValue < botMinRankValue) {
-      this.attacker = "player";
-      this.defender = "bot";
-    } else {
-      this.attacker = "bot";
-      this.defender = "player";
-    }
+    });
+    this.attacker = this.players[firstIndex];
+    const defenderIndex = (firstIndex + 1) % this.players.length;
+    this.defender = this.players[defenderIndex];
   }
-  attack(cardIndex) {
-    const attackerHand =
-      this.attacker === "player" ? this.playerHand : this.botHand;
-    const chosenCard = attackerHand[cardIndex];
+  attack(cardIndex, attackingPlayer = this.attacker) {
+    const chosenCard = attackingPlayer.hand[cardIndex];
     if (!chosenCard) {
       return;
     }
     if (this.table.length === 0) {
-      attackerHand.splice(cardIndex, 1);
+      attackingPlayer.removeCard(cardIndex);
       this.table.push({ attackCard: chosenCard, defendCard: null });
       return;
     }
@@ -124,13 +112,11 @@ class Game {
     if (!tableRanks.includes(chosenCard.rank)) {
       return false;
     }
-    attackerHand.splice(cardIndex, 1);
+    attackingPlayer.removeCard(cardIndex);
     this.table.push({ attackCard: chosenCard, defendCard: null });
   }
   defense(defenseCardIndex, tablePairIndex) {
-    const defenderHand =
-      this.defender === "player" ? this.playerHand : this.botHand;
-    const chosenDefenseCard = defenderHand[defenseCardIndex];
+    const chosenDefenseCard = this.defender.hand[defenseCardIndex];
     const targetPair = this.table[tablePairIndex];
     if (!chosenDefenseCard || !targetPair) {
       return;
@@ -150,7 +136,7 @@ class Game {
       attackCard.suit === this.trumpSuit &&
       chosenDefenseCard.value > attackCard.value;
     if (isSameSuitAndHigher || isTrumpOverNormal || isTrumpOverTrump) {
-      defenderHand.splice(defenseCardIndex, 1);
+      this.defender.removeCard(defenseCardIndex);
       targetPair.defendCard = chosenDefenseCard;
     }
   }
@@ -164,53 +150,25 @@ class Game {
     this.table = [];
   }
   takeCard() {
-    const defenderHand =
-      this.defender === "player" ? this.playerHand : this.botHand;
+    const cardsToTake = [];
     for (const pair of this.table) {
-      defenderHand.push(pair.attackCard);
+      cardsToTake.push(pair.attackCard);
       if (pair.defendCard) {
-        defenderHand.push(pair.defendCard);
+        cardsToTake.push(pair.defendCard);
       }
     }
+    this.defender.receiveCards(cardsToTake);
     this.table = [];
-  }
-  refillHands() {
-    const attackerHand =
-      this.attacker === "player" ? this.playerHand : this.botHand;
-    const defenderHand =
-      this.defender === "player" ? this.playerHand : this.botHand;
-    const attackerNeed = 6 - attackerHand.length;
-    if (attackerNeed > 0 && this.deckManager.cards.length > 0) {
-      const countToDraw = Math.min(attackerNeed, this.deckManager.cards.length);
-      const drawnCards = this.deckManager.dealHand(countToDraw);
-      attackerHand.push(...drawnCards);
-    }
-    const defenderNeed = 6 - defenderHand.length;
-    if (defenderNeed > 0 && this.deckManager.cards.length > 0) {
-      const countToDraw = Math.min(defenderNeed, this.deckManager.cards.length);
-      const drawnCards = this.deckManager.dealHand(countToDraw);
-      defenderHand.push(...drawnCards);
-    }
-  }
-  endTurn(action) {
-    if (action === "beat") {
-      this.beatCard();
-      [this.attacker, this.defender] = [this.defender, this.attacker];
-    } else if (action === "take") {
-      this.takeCard();
-    }
-    this.refillHands();
   }
   canThrowIn(chosenCard) {
     if (this.table.length === 0) return false;
-    let tableCardCount = 0;
-    for (const pair of this.table) {
-      tableCardCount++;
-      if (pair.defendCard) tableCardCount++;
+    if (this.table.length >= 6) {
+      return false;
     }
-    const defenderHand =
-      this.defender === "player" ? this.playerHand : this.botHand;
-    if (tableCardCount >= defenderHand.length || tableCardCount >= 6) {
+    const unbeatenCardsCount = this.table.filter(
+      (pair) => pair.defendCard === null,
+    ).length;
+    if (unbeatenCardsCount >= this.defender.hand.length) {
       return false;
     }
     const tableRanks = [];
@@ -222,98 +180,110 @@ class Game {
     }
     return tableRanks.includes(chosenCard.rank);
   }
-  botAttack() {
-    if (this.botHand.length === 0) return null;
-    if (this.table.length === 0) {
-      let bestCardIndex = 0;
-      for (let i = 1; i < this.botHand.length; i++) {
-        const currentCard = this.botHand[i];
-        const bestCard = this.botHand[bestCardIndex];
-        const bestIsTrump = bestCard.suit === this.trumpSuit;
-        const currentIsTrump = currentCard.suit === this.trumpSuit;
-        if (bestIsTrump && !currentIsTrump) {
-          bestCardIndex = i;
-        } else if (bestIsTrump === currentIsTrump) {
-          if (currentCard.value < bestCard.value) {
-            bestCardIndex = i;
-          }
-        }
-      }
-      const cardToAttack = this.botHand[bestCardIndex];
-      this.attack(bestCardIndex);
-      return cardToAttack;
-    }
-    for (let i = this.botHand.length - 1; i >= 0; i--) {
-      const botCard = this.botHand[i];
-      if (this.canThrowIn(botCard)) {
-        if (
-          botCard.suit === this.trumpSuit &&
-          this.deckManager.cards.length > 0
-        ) {
-          continue;
-        }
-        this.attack(i);
-        return botCard;
-      }
-    }
-    return null;
+  canTransfer(chosenCard) {
+    if (gameSettings.mode !== "transfer") return false;
+    if (this.table.length === 0) return false;
+    const hasDefendedCards = this.table.some(
+      (pair) => pair.defendCard !== null,
+    );
+    if (hasDefendedCards) return false;
+    if (this.attacker.hand.length <= this.table.length) return false;
+    return this.table.some((pair) => pair.attackCard.rank === chosenCard.rank);
   }
-  botDefense() {
-    let targetPairIndex = -1;
-    for (let i = 0; i < this.table.length; i++) {
-      if (this.table[i].defendCard === null) {
-        targetPairIndex = i;
-        break;
-      }
-    }
-    if (targetPairIndex === -1) return false;
-    const attackCard = this.table[targetPairIndex].attackCard;
-    const candidates = [];
-    for (let i = 0; i < this.botHand.length; i++) {
-      const botCard = this.botHand[i];
-      const isSameSuitAndHigher =
-        botCard.suit === attackCard.suit && botCard.value > attackCard.value;
-      const isTrumpOverNormal =
-        botCard.suit === this.trumpSuit && attackCard.suit !== this.trumpSuit;
-      const isTrumpOverTrump =
-        botCard.suit === this.trumpSuit &&
-        attackCard.suit === this.trumpSuit &&
-        botCard.value > attackCard.value;
-      if (isSameSuitAndHigher || isTrumpOverNormal || isTrumpOverTrump) {
-        candidates.push({ cardObj: botCard, index: i });
-      }
-    }
-    if (candidates.length === 0) {
-      this.endTurn("take");
-      return false;
-    }
-    let bestCandidate = candidates[0];
-    for (let i = 1; i < candidates.length; i++) {
-      const current = candidates[i];
-      const best = bestCandidate;
-      const bestIsTrump = best.cardObj.suit === this.trumpSuit;
-      const currentIsTrump = current.cardObj.suit === this.trumpSuit;
-      if (bestIsTrump && !currentIsTrump) {
-        bestCandidate = current;
-      } else if (bestIsTrump === currentIsTrump) {
-        if (current.cardObj.value < best.cardObj.value) {
-          bestCandidate = current;
-        }
-      }
-    }
-    this.defense(bestCandidate.index, targetPairIndex);
+  transfer(cardIndex, player = this.defender) {
+    const chosenCard = player.hand[cardIndex];
+    if (!chosenCard || !this.canTransfer(chosenCard)) return false;
+    player.removeCard(cardIndex);
+    this.table.push({ attackCard: chosenCard, defendCard: null });
+    const temp = this.attacker;
+    this.attacker = this.defender;
+    this.defender = temp;
     return true;
+  }
+  refillHands() {
+    const attackerIndex = this.players.indexOf(this.attacker);
+    const numPlayers = this.players.length;
+    for (let i = 0; i < numPlayers; i++) {
+      const playerIndex = (attackerIndex + i) % numPlayers;
+      const player = this.players[playerIndex];
+      if (player === this.defender) continue;
+      const need = 6 - player.hand.length;
+      if (need > 0 && this.deckManager.cards.length > 0) {
+        const countToDraw = Math.min(need, this.deckManager.cards.length);
+        const drawnCards = this.deckManager.dealHand(countToDraw);
+        player.receiveCards(drawnCards);
+      }
+    }
+    const defenderNeed = 6 - this.defender.hand.length;
+    if (defenderNeed > 0 && this.deckManager.cards.length > 0) {
+      const countToDraw = Math.min(defenderNeed, this.deckManager.cards.length);
+      const drawnCards = this.deckManager.dealHand(countToDraw);
+      this.defender.receiveCards(drawnCards);
+    }
+  }
+  endTurn(action) {
+    const defenderIndex = this.players.indexOf(this.defender);
+    if (action === "beat") {
+      this.beatCard();
+      this.attacker = this.defender;
+      this.defender = this.players[(defenderIndex + 1) % this.players.length];
+    } else if (action === "take") {
+      this.takeCard();
+      this.attacker = this.players[(defenderIndex + 1) % this.players.length];
+      this.defender = this.players[(defenderIndex + 2) % this.players.length];
+    }
+    this.refillHands();
   }
   checkGameOver() {
     if (this.deckManager.cards.length === 0 && this.table.length === 0) {
-      if (this.playerHand.length === 0 && this.botHand.length === 0) {
+      const playersWithCards = this.players.filter(
+        (player) => player.hand.length > 0,
+      );
+      if (playersWithCards.length === 0) {
         return "draw";
-      } else if (this.playerHand.length === 0) {
-        return "player";
-      } else if (this.botHand.length === 0) {
-        return "bot";
       }
+      if (playersWithCards.length > 1) {
+        return false;
+      }
+      const loser = playersWithCards[0];
+      return loser;
     }
     return false;
+  }
+}
+export class Players {
+  constructor(id, name, type = "human") {
+    this.id = id;
+    this.name = name;
+    this.type = type;
+    this.hand = [];
+  }
+  getMinTrump(trumpSuit) {
+    let minRankValue = Infinity;
+    for (const currentCard of this.hand) {
+      if (currentCard.suit === trumpSuit && currentCard.value < minRankValue) {
+        minRankValue = currentCard.value;
+      }
+    }
+    return minRankValue;
+  }
+  receiveCards(drawnCards) {
+    this.hand.push(...drawnCards);
+  }
+  removeCard(cardIndex) {
+    if (cardIndex < 0 || cardIndex >= this.hand.length) return null;
+    return this.hand.splice(cardIndex, 1)[0];
+  }
+}
+export class Bot extends Players {
+  constructor(id, name, type = "bot") {
+    super(id, name, type);
+  }
+  botAttack(game) {
+    return botAttack(this, game);
+  }
+
+  botDefense(game) {
+    return botDefense(this, game);
   }
 }
