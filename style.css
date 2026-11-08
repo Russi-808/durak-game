@@ -333,6 +333,7 @@ body {
   body {
     overflow: auto;
   }
+
   #game-container {
     flex-direction: column;
     align-items: center;
@@ -340,9 +341,9 @@ body {
     width: 100vw;
     height: 100vh;
     margin: 0;
-    padding: 8px;
+    padding: 10px;
     box-sizing: border-box;
-    gap: 5px;
+    gap: 8px;
   }
 
   #main-play-zone {
@@ -351,19 +352,33 @@ body {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: space-around;
     align-items: center;
     gap: 10px;
   }
 
+  /* Делаем карты крупнее и читаемее на телефоне */
+  .card-ui {
+    width: 75px;
+    height: 100px;
+    padding: 8px;
+    font-size: 0.95rem;
+    border-radius: 6px;
+  }
+
+  .card-ui.shirt {
+    font-size: 32px;
+  }
+
+  /* Панель колоды и кнопки снизу делаем крупнее */
   #side-deck-panel {
     width: 100%;
     flex-direction: row;
     justify-content: center;
     align-items: center;
-    gap: 25px;
-    padding: 8px;
-    background: rgba(0, 0, 0, 0.2);
+    gap: 20px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.25);
     border-radius: 12px;
     flex-shrink: 0;
   }
@@ -371,35 +386,47 @@ body {
   #visual-deck-container {
     flex-direction: row;
     align-items: center;
-    gap: 10px;
-  }
-  .card-ui {
-    width: 55px;
-    height: 75px;
-    padding: 4px;
-    font-size: 0.75rem;
+    gap: 12px;
   }
 
-  .card-ui.shirt {
-    font-size: 24px;
+  /* Слот козыря и баунти с количеством карт */
+  #trump-card-slot {
+    font-size: 1.2rem;
+    padding: 4px 10px;
+  }
+
+  #deck-count-bubble {
+    font-size: 0.85rem;
+    padding: 3px 6px;
+    top: 30px;
+    right: -8px;
+  }
+
+  /* Кнопка действия (взять/бито) */
+  #action-btn {
+    padding: 10px 18px;
+    font-size: 1rem;
+    border-radius: 20px;
   }
 
   .table-pair {
-    width: 75px;
-    height: 105px;
+    width: 95px;
+    height: 130px;
   }
 
   .defend-card {
-    top: 12px;
-    left: 12px;
+    top: 18px;
+    left: 20px;
   }
+
+  /* Контейнеры карт с горизонтальным скроллом для больших рук */
   .hand-container,
   #table-zone {
     width: 100%;
-    min-height: 85px;
+    min-height: 110px;
     flex-wrap: nowrap;
     overflow-x: auto;
-    justify-content: center;
-    padding: 4px;
+    justify-content: flex-start;
+    padding: 6px;
   }
 }
