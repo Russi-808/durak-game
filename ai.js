@@ -13,9 +13,11 @@ export function botDefense(bot, game) {
   }
   return simpleBotDefense(bot, game);
 }
-export function cardWeight(card, trumpSuit, isDeckEmpty = false) {
+export function cardWeight(card, game) {
   let weight = card.value;
-  if (card.isTrump(trumpSuit)) {
+  const isDeckEmpty =
+    !game.deckManager.card || game.deckManager.card.length === 0;
+  if (card.suit === game.trumpSuit) {
     weight += isDeckEmpty ? 25 : 15;
   }
   return weight;
@@ -46,6 +48,7 @@ export function botMemory(bot, game) {
   return {
     seenCards,
     unknownCards,
+    botHand: bot.hand,
   };
 }
 export function expertBotAttack(bot, game) {
