@@ -1,34 +1,41 @@
-# 🃏 Durak Card Game
+# 🃏 Durak Card Game (Classic & Passing)
 
-A fully functional web-based version of the popular Russian card game **"Durak" (Classic / Passing)**. Built with pure JavaScript, HTML5, and CSS3.
+A fully functional, modern web-based version of the popular Russian card game **"Durak"**. Built with pure Vanilla JavaScript (ES6+ Modules), HTML5, and responsive CSS3, featuring a smart **Expert AI mode** and full mobile responsiveness.
 
 🚀 **[Play the game live here!](https://russi-808.github.io/durak-game/)**
 
 ---
 
 ## 🎮 Features
-* **Full Game Logic:** Turn-based gameplay, card beating, drawing from the deck, and determining the winner/loser.
-* **Dynamic UI:** Responsive design with smooth visual updates handled via custom JavaScript components.
-* **Pure Web Stack:** No heavy frameworks or external dependencies—just vanilla JavaScript.
+
+* **Complete Game Rules:** Classic and passing game modes, card beating, drawing from the deck, transfer mechanics, and win/loss state handling.
+* **🧠 Advanced Expert AI:** 
+  * **Card Memory:** Tracks seen cards (`seenCards`) in the discard pile and on the table.
+  * **Tactical Attack Strategies:** Targets void suits (predicting missing suits in the opponent's hand), executes combo-building (matching ranks), and manages endgame high-card/trump dumping.
+  * **Dynamic Weighting:** Evaluates card values and game phases (adjusting weights when the deck is empty).
+* **📱 Fully Responsive UI:** 
+  * Optimized layout for desktop, tablets, and mobile devices using CSS Flexbox and media queries.
+  * Smooth horizontal touch-scrolling for card hands to prevent overflow on small screens.
+* **⚡ Pure Web Stack:** Zero heavy external dependencies or frameworks—clean, modular vanilla JavaScript.
+
+---
 
 ## 🛠️ Project Structure
-The project is built using a clean and modular architecture:
-* `index.html` - The core structure and layout of the game screen.
-* `style.css` - Visual styling, card layouts, and responsive design.
-* `main.js` - The main game loop, rules, and core logical operations.
-* `ui.js` - Dedicated UI renderer handling card animations and user interactions.
+
+The project follows a clean, modular ES6 architecture:
+* `index.html` - Core structure and layout of the game screen.
+* `style.css` - Visual styling, card layouts, animations, and adaptive media queries.
+* `main.js` - Main game state, loop, and controller logic.
+* `ai.js` - AI decision-making algorithms, split into "Simple" and "Expert" logic with custom memory and card weighting.
+* `settings.js` - Game configurations, modes, and card reference parameters.
+
+---
 
 ## ⚙️ How to Run Locally
 
 1. Clone the repository:
    ```bash
-   https://github.com/Russi-808/durak-game
-   ```
-2. Navigate to the project folder:
-   ```bash
-   cd durak-game
-   ```
-3. Open `index.html` in any modern web browser.
-
----
+   git clone [https://github.com/Russi-808/durak-game.git](https://github.com/Russi-808/durak-game.git)
+2. cd durak-game
+   ---
 *Created by [Russi-808](https://github.com/Russi-808)*
