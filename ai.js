@@ -53,20 +53,56 @@ export function botMemory(bot, game) {
 }
 export function expertBotAttack(bot, game) {
   if (bot.hand.length === 0) return null;
+
   const memory = botMemory(bot, game);
+  const isDeckEmpty =
+    !game.deckManager.cards || game.deckManager.cards.length === 0;
+
   if (game.table.length === 0) {
-    let bestCardIndex = 0;
-    let lowestWeight = cardWeight(bot.hand[0], game);
-    for (let i = 1; i < bot.hand.length; i++) {
-      const currentCard = bot.hand[i];
-      const currentWeight = cardWeight(currentCard, game);
-      if (currentWeight < lowestWeight) {
-        lowestWeight = currentWeight;
-        bestCardIndex = i;
+    const seenSuitCounts = {};
+    memory.seenCards.forEach((card) => {
+      seenSuitCounts[card.suit] = (seenSuitCounts[card.suit] || 0) + 1;
+    });
+
+    let bestIndex = 0;
+    let bestScore = -Infinity;
+
+    for (let i = 0; i < bot.hand.length; i++) {
+      const card = bot.hand[i];
+      let score = 0;
+
+      const isTrump = card.suit === game.trumpSuit;
+      if (isDeckEmpty && !isTrump) {
+        score += card.value * 2;
+      } else {
+        score -= cardWeight(card, game);
+      }
+
+      const countInSeen = seenSuitCounts[card.suit] || 0;
+      if (countInSeen >= 6 && !isTrump) {
+        score += 40;
+      } else {
+        score += countInSeen * 1.5;
+      }
+
+      if (isDeckEmpty && isTrump) {
+        score += (14 - card.value) * 1.5;
+      }
+      const hasMatchingRank = bot.hand.some(
+        (c, idx) => idx !== i && c.rank === card.rank,
+      );
+      if (hasMatchingRank) {
+        score += 15;
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = i;
       }
     }
-    const cardToAttack = bot.hand[bestCardIndex];
-    game.attack(bestCardIndex, bot);
+
+    const cardToAttack = bot.hand[bestIndex];
+    game.attack(bestIndex, bot);
     return cardToAttack;
   }
   const possibleThrowIn = [];
@@ -76,30 +112,28 @@ export function expertBotAttack(bot, game) {
       possibleThrowIn.push({ card: botCard, index: i });
     }
   }
+
   if (possibleThrowIn.length === 0) {
     return null;
   }
+
   let bestThrowIn = possibleThrowIn[0];
-  let lowestThrowIn = cardWeight(bestThrowIn.card, game);
+  let lowestWeight = cardWeight(bestThrowIn.card, game);
+
   for (let i = 1; i < possibleThrowIn.length; i++) {
     const current = possibleThrowIn[i];
     const currentWeight = cardWeight(current.card, game);
     const isCurrentTrump = current.card.suit === game.trumpSuit;
     const isBestTrump = bestThrowIn.card.suit === game.trumpSuit;
-    const deckHasCard =
-      game.deckManager.cards && game.deckManager.cards.length > 0;
-
-    if (deckHasCard && isBestTrump && !isCurrentTrump) {
+    if (isDeckEmpty && isBestTrump && !isCurrentTrump) {
       bestThrowIn = current;
-      lowestThrowIn = currentWeight;
-    } else if (
-      isCurrentTrump === isBestTrump &&
-      currentWeight < lowestThrowIn
-    ) {
+      lowestWeight = currentWeight;
+    } else if (isCurrentTrump === isBestTrump && currentWeight < lowestWeight) {
       bestThrowIn = current;
-      lowestThrowIn = currentWeight;
+      lowestWeight = currentWeight;
     }
   }
+
   game.attack(bestThrowIn.index, bot);
   return bestThrowIn.card;
 }
